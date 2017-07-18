@@ -382,8 +382,8 @@ ps_reinit(ps_decoder_t *ps, ps_config_t *config)
         }
 
         for(lmset_it = ngram_model_set_iter(lmset);
-            lmset_it; lmset_it = ngram_model_set_iter_next(lmset_it)) {    
-            ngram_model_t *lm = ngram_model_set_iter_model(lmset_it, &name);            
+            lmset_it; lmset_it = ngram_model_set_iter_next(lmset_it)) {
+            ngram_model_t *lm = ngram_model_set_iter_model(lmset_it, &name);
             E_INFO("adding search %s\n", name);
             if (ps_add_lm(ps, name, lm)) {
                 ngram_model_set_iter_free(lmset_it);
@@ -560,13 +560,13 @@ ps_search_iter_next(ps_search_iter_t *itor)
    return (ps_search_iter_t *)hash_table_iter_next((hash_iter_t *)itor);
 }
 
-const char* 
+const char*
 ps_search_iter_val(ps_search_iter_t *itor)
 {
    return (const char*)(((hash_iter_t *)itor)->ent->key);
 }
 
-void 
+void
 ps_search_iter_free(ps_search_iter_t *itor)
 {
     hash_table_iter_free((hash_iter_t *)itor);
@@ -619,7 +619,7 @@ static int
 set_search_internal(ps_decoder_t *ps, ps_search_t *search)
 {
     ps_search_t *old_search;
-    
+
     if (!search)
 	return -1;
 
@@ -1011,7 +1011,7 @@ ps_lookup_word(ps_decoder_t *ps, const char *word)
     int32 phlen, j;
     char *phones;
     dict_t *dict = ps->dict;
-    
+
     wid = dict_wordid(dict, word);
     if (wid == BAD_S3WID)
 	return NULL;
@@ -1093,7 +1093,7 @@ ps_start_utt(ps_decoder_t *ps)
 {
     int rv;
     char uttid[16];
-    
+
     if (ps->acmod->state == ACMOD_STARTED || ps->acmod->state == ACMOD_PROCESSING) {
 	E_ERROR("Utterance already started\n");
 	return -1;
@@ -1345,7 +1345,7 @@ ps_end_utt(ps_decoder_t *ps)
         int32 score;
 
         hyp = ps_get_hyp(ps, &score);
-        
+
         if (hyp != NULL) {
     	    E_INFO("%s (%d)\n", hyp, score);
     	    E_INFO_NOFN("%-20s %-5s %-5s %-5s %-10s %-10s %-3s\n",
@@ -1387,13 +1387,28 @@ ps_get_hyp(ps_decoder_t *ps, int32 *out_best_score)
 glist_t
 ps_get_hyp_with_tags(ps_decoder_t *ps, int32 *out_best_score)
 {
-    glist_t hyptags_list;
-
     ptmr_start(&ps->perf);
-    hyptags_list = ps_search_hyp_with_tags(ps->search, out_best_score);
+    glist_t hyptags_list = ps_search_hyp_with_tags(ps->search, out_best_score);
     ptmr_stop(&ps->perf);
     return hyptags_list;
 }
+
+glist_t
+ps_get_word_and_tags(glist_t hyptags_list, char *word)
+{
+    if(!hyptags_list)
+        return NULL;
+
+    ps_hyptags_t *r = (ps_hyptags_t *)gnode_ptr(hyptags_list);
+    if(!r){
+        E_ERROR("glist_t data NULL");
+        return NULL;
+    }
+
+    strncpy(word, r->word, strlen(r->word)+1);
+    return r->tags;
+}
+
 
 int32
 ps_get_prob(ps_decoder_t *ps)
