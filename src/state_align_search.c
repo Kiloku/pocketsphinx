@@ -421,6 +421,7 @@ static ps_searchfuncs_t state_align_search_funcs = {
     /* free: */   state_align_search_free,
     /* lattice: */  NULL,
     /* hyp: */      state_align_search_hyp,
+    /* hyptags_list: */ NULL,
     /* prob: */     NULL,
     /* seg_iter: */ state_align_search_seg_iter,
 };

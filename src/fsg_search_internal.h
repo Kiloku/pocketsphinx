@@ -159,5 +159,9 @@ char const *fsg_search_hyp(ps_search_t *search, int32 *out_score);
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
+/**
+ * Get glist_t with word-tags pairs.
+ */
+glist_t fsg_search_hyp_with_tags(ps_search_t *search, int32 *out_score);
 
 #endif
