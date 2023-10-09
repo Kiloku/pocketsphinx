@@ -8,7 +8,7 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *    notice, this list of conditions and the following disclaimer.
  *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
@@ -16,16 +16,16 @@
  *    distribution.
  *
  *
- * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
+ * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND
+ * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
  * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
  * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * ====================================================================
@@ -70,6 +70,7 @@
 #include <pocketsphinx/prim_type.h>
 #include <pocketsphinx/logmath.h>
 #include <pocketsphinx/err.h>
+#include <util/glist.h>
 
 /* PocketSphinx API headers */
 #include <pocketsphinx/vad.h>
@@ -88,6 +89,13 @@ extern "C" {
 #if 0
 }
 #endif
+
+#define MAX_TAG_SIZE 50
+
+/**
+ * PocketSphinx hyptags struct.
+ */
+typedef struct ps_hyptags_s ps_hyptags_t;
 
 /* Transparent structures */
 /**
@@ -733,7 +741,7 @@ int ps_add_word(ps_decoder_t *ps,
  *         allocated and must be freed by the user.
  */
 POCKETSPHINX_EXPORT
-char *ps_lookup_word(ps_decoder_t *ps, 
+char *ps_lookup_word(ps_decoder_t *ps,
 	             const char *word);
 
 /**
@@ -901,6 +909,28 @@ POCKETSPHINX_EXPORT
 char const *ps_get_hyp(ps_decoder_t *ps, int32 *out_best_score);
 
 /**
+ * Get glist containing word-tags pairs, as ps_hyptags_t.
+ *
+ * @param ps Decoder.
+ * @param out_best_score Output: path score corresponding to returned string.
+ * @param glist pointer in which to store word-tag pairs
+ * @return String containing best hypothesis at this point in
+ *         decoding.  NULL if no hypothesis is available.
+ */
+
+POCKETSPHINX_EXPORT
+char const *ps_get_hyp_with_tags(ps_decoder_t *ps, int32 *out_best_score, glist_t *hyptagsP);
+
+/**
+ * Get glist containing tags and word referenced.
+ *
+ * @param glist containing word-tags pairs.
+ * @param referenced word of the hypothesis.
+ * @param referenced tag of the hypothesis.
+ */
+void ps_get_word_and_tag(glist_t hyptags_list, char *word, char *tag);
+
+/**
  * Get posterior probability.
  *
  * @note Unless the -bestpath option is enabled, this function will
@@ -914,6 +944,9 @@ char const *ps_get_hyp(ps_decoder_t *ps, int32 *out_best_score);
  * @param ps Decoder.
  * @return Posterior probability of the best hypothesis.
  */
+
+void ps_free_tags_struct(glist_t hyptags_list);
+
 POCKETSPHINX_EXPORT
 int32 ps_get_prob(ps_decoder_t *ps);
 
@@ -1032,7 +1065,7 @@ ps_nbest_t *ps_nbest(ps_decoder_t *ps);
  * @return Updated N-best iterator, or NULL if no more hypotheses are
  *         available (iterator is freed ni this case).
  */
-POCKETSPHINX_EXPORT 
+POCKETSPHINX_EXPORT
 ps_nbest_t *ps_nbest_next(ps_nbest_t *nbest);
 
 /**

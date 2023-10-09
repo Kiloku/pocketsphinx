@@ -382,8 +382,8 @@ ps_reinit(ps_decoder_t *ps, ps_config_t *config)
         }
 
         for(lmset_it = ngram_model_set_iter(lmset);
-            lmset_it; lmset_it = ngram_model_set_iter_next(lmset_it)) {    
-            ngram_model_t *lm = ngram_model_set_iter_model(lmset_it, &name);            
+            lmset_it; lmset_it = ngram_model_set_iter_next(lmset_it)) {
+            ngram_model_t *lm = ngram_model_set_iter_model(lmset_it, &name);
             E_INFO("adding search %s\n", name);
             if (ps_add_lm(ps, name, lm)) {
                 ngram_model_set_iter_free(lmset_it);
@@ -560,13 +560,13 @@ ps_search_iter_next(ps_search_iter_t *itor)
    return (ps_search_iter_t *)hash_table_iter_next((hash_iter_t *)itor);
 }
 
-const char* 
+const char*
 ps_search_iter_val(ps_search_iter_t *itor)
 {
    return (const char*)(((hash_iter_t *)itor)->ent->key);
 }
 
-void 
+void
 ps_search_iter_free(ps_search_iter_t *itor)
 {
     hash_table_iter_free((hash_iter_t *)itor);
@@ -619,7 +619,7 @@ static int
 set_search_internal(ps_decoder_t *ps, ps_search_t *search)
 {
     ps_search_t *old_search;
-    
+
     if (!search)
 	return -1;
 
@@ -714,7 +714,7 @@ ps_set_align_text(ps_decoder_t *ps, const char *text)
             return -1;
         }
         wid = fsg_model_word_add(fsg, word);
-        fsg_model_trans_add(fsg, nwords, nwords + 1, 0, wid);
+        fsg_model_trans_add(fsg, nwords, nwords + 1, 0, wid, NULL);
         ptr = word + n;
         *ptr = delimfound;
         ++nwords;
@@ -795,6 +795,47 @@ ps_add_fsg(ps_decoder_t *ps, const char *name, fsg_model_t *fsg)
     search = fsg_search_init(name, fsg, ps->config, ps->acmod, ps->dict, ps->d2p);
     return set_search_internal(ps, search);
 }
+
+// int
+// ps_add_jsgf(ps_decoder_t *ps, const char *name, jsgf_t *jsgf)
+// {
+//   if (!jsgf)
+//     return -1;
+
+//   fsg_model_t *fsg;
+//   jsgf_rule_t *rule;
+//   char const *toprule;
+//   float lw;
+//   int result;
+
+//   if (!jsgf)
+//       return -1;
+
+//   rule = NULL;
+//   /* Take the -toprule if specified. */
+//   if ((toprule = cmd_ln_str_r(ps->config, "-toprule"))) {
+//       rule = jsgf_get_rule(jsgf, toprule);
+//       if (rule == NULL) {
+//           E_ERROR("Start rule %s not found\n", toprule);
+//           jsgf_grammar_free(jsgf);
+//           return -1;
+//       }
+//   } else {
+//       rule = jsgf_get_public_rule(jsgf);
+//       if (rule == NULL) {
+//           E_ERROR("No public rules found in grammar\n");
+//           jsgf_grammar_free(jsgf);
+//           return -1;
+//       }
+//   }
+
+//   lw = cmd_ln_float32_r(ps->config, "-lw");
+//   fsg = jsgf_build_fsg(jsgf, rule, ps->lmath, lw);
+//   result = ps_set_fsg(ps, name, fsg);
+//   fsg_model_free(fsg);
+//   jsgf_grammar_free(jsgf);
+//   return result;
+// }
 
 int 
 ps_add_jsgf_file(ps_decoder_t *ps, const char *name, const char *path)
@@ -1011,7 +1052,7 @@ ps_lookup_word(ps_decoder_t *ps, const char *word)
     int32 phlen, j;
     char *phones;
     dict_t *dict = ps->dict;
-    
+
     wid = dict_wordid(dict, word);
     if (wid == BAD_S3WID)
 	return NULL;
@@ -1093,7 +1134,7 @@ ps_start_utt(ps_decoder_t *ps)
 {
     int rv;
     char uttid[16];
-    
+
     if (ps->acmod->state == ACMOD_STARTED || ps->acmod->state == ACMOD_PROCESSING) {
 	E_ERROR("Utterance already started\n");
 	return -1;
@@ -1108,6 +1149,7 @@ ps_start_utt(ps_decoder_t *ps)
     ptmr_reset(&ps->perf);
     ptmr_start(&ps->perf);
 
+
     sprintf(uttid, "%09u", ps->uttno);
     ++ps->uttno;
 
@@ -1120,6 +1162,7 @@ ps_start_utt(ps_decoder_t *ps)
     ps->search->hyp_str = NULL;
     if ((rv = acmod_start_utt(ps->acmod)) < 0)
         return rv;
+
 
     /* Start logging features and audio if requested. */
     if (ps->mfclogdir) {
@@ -1161,11 +1204,9 @@ ps_start_utt(ps_decoder_t *ps)
         ckd_free(logfn);
         acmod_set_senfh(ps->acmod, senfh);
     }
-
     /* Start auxiliary phone loop search. */
     if (ps->phone_loop)
         ps_search_start(ps->phone_loop);
-
     return ps_search_start(ps->search);
 }
 
@@ -1345,7 +1386,7 @@ ps_end_utt(ps_decoder_t *ps)
         int32 score;
 
         hyp = ps_get_hyp(ps, &score);
-        
+
         if (hyp != NULL) {
     	    E_INFO("%s (%d)\n", hyp, score);
     	    E_INFO_NOFN("%-20s %-5s %-5s %-5s %-10s %-10s %-3s\n",
@@ -1383,6 +1424,41 @@ ps_get_hyp(ps_decoder_t *ps, int32 *out_best_score)
     ptmr_stop(&ps->perf);
     return hyp;
 }
+
+char const *
+ps_get_hyp_with_tags(ps_decoder_t *ps, int32 *out_best_score, glist_t *hyptagsP)
+{
+    char const *hyp;
+    ptmr_start(&ps->perf);
+    hyp = ps_search_hyp_with_tags(ps->search, out_best_score, hyptagsP);
+    ptmr_stop(&ps->perf);
+    return hyp;
+}
+
+void
+ps_get_word_and_tag(glist_t hyptags_list, char *word, char *tag)
+{
+    if(!hyptags_list)
+        return;
+
+    ps_hyptags_t *r = (ps_hyptags_t *)gnode_ptr(hyptags_list);
+    if(!r){
+        E_WARN("r NULL\n");
+        return;
+    }
+
+    strncpy(tag, r->tag, strlen(r->tag)+1);
+    strncpy(word, r->word, strlen(r->word)+1);
+}
+
+void ps_free_tags_struct(glist_t hyptags_list)
+{
+    ps_hyptags_t *r = (ps_hyptags_t *)gnode_ptr(hyptags_list);
+    if(r){
+        free(r);
+    }
+}
+
 
 int32
 ps_get_prob(ps_decoder_t *ps)

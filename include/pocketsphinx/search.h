@@ -243,6 +243,17 @@ int ps_add_fsg(ps_decoder_t *ps, const char *name, fsg_model_t *fsg);
 /**
  * Adds new search using JSGF model.
  *
+ * Convenient method to use already built jsgf_t structs.
+ *
+ * @see ps_add_fsg
+ */
+// POCKETSPHINX_EXPORT
+// int ps_add_jsgf(ps_decoder_t *ps, const char *name, jsgf_t *jsgf);
+
+
+/**
+ * Adds new search using JSGF model.
+ *
  * Convenient method to load JSGF model and create a search.
  *
  * @memberof ps_decoder_t

@@ -72,6 +72,7 @@ extern "C" {
 typedef struct jsgf_rhs_s jsgf_rhs_t;
 typedef struct jsgf_atom_s jsgf_atom_t;
 typedef struct jsgf_link_s jsgf_link_t;
+typedef struct jsgf_rule_stack_s jsgf_rule_stack_t;
 
 struct jsgf_s {
     char *version;  /**< JSGF version (from header) */
@@ -129,6 +130,55 @@ jsgf_rule_t *jsgf_import_rule(jsgf_t *jsgf, char *name);
 int jsgf_atom_free(jsgf_atom_t *atom);
 int jsgf_rule_free(jsgf_rule_t *rule);
 jsgf_rule_t *jsgf_rule_retain(jsgf_rule_t *rule);
+
+/**
+ * Creates a new atom with single tag.
+ *
+ */
+POCKETSPHINX_EXPORT
+jsgf_atom_t *jsgf_atom_with_tag_new(char *name, float weight, char *tag);
+
+/**
+ * Creates a new rhs struct.
+ *
+ */
+POCKETSPHINX_EXPORT
+jsgf_rhs_t *jsgf_rhs_new();
+
+/**
+ * Some getters and setters put to allow the single inclusion of jsgf.h.
+ *
+ */
+
+POCKETSPHINX_EXPORT
+jsgf_rhs_t *jsgf_get_rule_rhs(jsgf_rule_t *rule);
+
+POCKETSPHINX_EXPORT
+jsgf_rhs_t *jsgf_get_rhs_alt(jsgf_rhs_t *rhs);
+
+POCKETSPHINX_EXPORT
+gnode_t *jsgf_get_rhs_atom(jsgf_rhs_t *rhs);
+
+POCKETSPHINX_EXPORT
+char *jsgf_get_atom_name(jsgf_atom_t *atom);
+
+POCKETSPHINX_EXPORT
+void jsgf_set_rule_rhs(jsgf_rule_t *rule, jsgf_rhs_t *rhs);
+
+POCKETSPHINX_EXPORT
+void jsgf_set_rhs_alt(jsgf_rhs_t *rhs, jsgf_rhs_t *alt);
+
+POCKETSPHINX_EXPORT
+void jsgf_set_rhs_atom(jsgf_rhs_t *rhs, gnode_t* gn);
+
+POCKETSPHINX_EXPORT
+void jsgf_set_atom_name(jsgf_atom_t *atom, char *name);
+
+POCKETSPHINX_EXPORT
+int jsgf_is_atom_rule(jsgf_atom_t *atom);
+
+POCKETSPHINX_EXPORT
+int jsgf_rule_clean(jsgf_rule_t *rule);
 
 #ifdef __cplusplus
 }
