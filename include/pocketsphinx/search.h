@@ -247,8 +247,8 @@ int ps_add_fsg(ps_decoder_t *ps, const char *name, fsg_model_t *fsg);
  *
  * @see ps_add_fsg
  */
-POCKETSPHINX_EXPORT
-int ps_add_jsgf(ps_decoder_t *ps, const char *name, jsgf_t *jsgf);
+// POCKETSPHINX_EXPORT
+// int ps_add_jsgf(ps_decoder_t *ps, const char *name, jsgf_t *jsgf);
 
 
 /**

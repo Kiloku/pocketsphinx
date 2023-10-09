@@ -60,6 +60,21 @@ extern int yyparse(void *scanner, jsgf_t * jsgf);
  **/
 
 jsgf_atom_t *
+jsgf_atom_with_tag_new(char *name, float weight, char *tag)
+{
+    jsgf_atom_t *atom;
+
+    atom = ckd_calloc(1, sizeof(*atom));
+    atom->name = ckd_salloc(name);
+    atom->weight = weight;
+    const char *tagC = ckd_salloc(tag);
+
+    glist_t tags = glist_add_ptr(NULL,(void *)tagC);
+    atom->tags = tags;
+    return atom;
+}
+
+jsgf_atom_t *
 jsgf_atom_new(char *name, float weight)
 {
     jsgf_atom_t *atom;
@@ -67,6 +82,7 @@ jsgf_atom_new(char *name, float weight)
     atom = ckd_calloc(1, sizeof(*atom));
     atom->name = ckd_salloc(name);
     atom->weight = weight;
+    //atom->tags = NULL;
     return atom;
 }
 
@@ -75,6 +91,15 @@ jsgf_atom_free(jsgf_atom_t * atom)
 {
     if (atom == NULL)
         return 0;
+
+    gnode_t *gn;
+    for(gn = atom->tags;gn;gn = gnode_next(gn)){
+        char *tag = (char *)gnode_ptr(gn);
+        if(tag){
+            ckd_free(tag);
+        }
+    }
+    glist_free(atom->tags);
     ckd_free(atom->name);
     ckd_free(atom);
     return 0;
@@ -508,7 +533,7 @@ jsgf_build_fsg_internal(jsgf_t * grammar, jsgf_rule_t * rule,
                 int wid = fsg_model_word_add(fsg, link->atom->name);
                 fsg_model_trans_add(fsg, link->from, link->to,
                                     logmath_log(lmath, link->atom->weight),
-                                    wid);
+                                    wid, link->atom->tags);
             }
         }
         else {
@@ -917,4 +942,98 @@ void
 jsgf_rule_iter_free(jsgf_rule_iter_t *itor)
 {
     return hash_table_iter_free(itor);
+}
+
+jsgf_rhs_t *
+jsgf_get_rule_rhs(jsgf_rule_t *rule)
+{
+    if(!rule)
+        return NULL;
+
+    return rule->rhs;
+}
+
+jsgf_rhs_t *
+jsgf_get_rhs_alt(jsgf_rhs_t *rhs)
+{
+    if(!rhs)
+        return NULL;
+
+    return rhs->alt;
+}
+
+gnode_t *
+jsgf_get_rhs_atom(jsgf_rhs_t *rhs)
+{
+    if(!rhs)
+        return NULL;
+
+    return rhs->atoms;
+}
+
+char *
+jsgf_get_atom_name(jsgf_atom_t *atom)
+{
+    if(!atom)
+        return NULL;
+
+    return atom->name;
+}
+
+void
+jsgf_set_rule_rhs(jsgf_rule_t *rule, jsgf_rhs_t *rhs)
+{
+    if(rule)
+        rule->rhs = rhs;
+}
+
+void
+jsgf_set_rhs_alt(jsgf_rhs_t *rhs, jsgf_rhs_t *alt)
+{
+    if(rhs)
+        rhs->alt = alt;
+}
+
+void
+jsgf_set_rhs_atom(jsgf_rhs_t *rhs, gnode_t* gn)
+{
+    if(rhs)
+        rhs->atoms = gn;
+}
+
+void
+jsgf_set_atom_name(jsgf_atom_t *atom, char *name)
+{
+    if(atom)
+        atom->name = name;
+}
+
+int
+jsgf_is_atom_rule(jsgf_atom_t *atom)
+{
+    if(!atom)
+        return -1;
+
+    if(atom->name[0] == '<'){
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+jsgf_rhs_t *
+jsgf_rhs_new()
+{
+    return (jsgf_rhs_t *) ckd_calloc(1, sizeof(jsgf_rhs_t));
+}
+
+int
+jsgf_rule_clean(jsgf_rule_t *rule)
+{
+    if (rule == NULL)
+        return 0;
+    if (--rule->refcnt > 0)
+        return rule->refcnt;
+    jsgf_rhs_free(rule->rhs);
+    return 0;
 }

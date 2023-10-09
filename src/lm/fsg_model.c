@@ -91,7 +91,7 @@ nextline_str2words(FILE * fp, int32 * lineno,
 
 void
 fsg_model_trans_add(fsg_model_t * fsg,
-                    int32 from, int32 to, int32 logp, int32 wid)
+                    int32 from, int32 to, int32 logp, int32 wid, glist_t tags)
 {
     fsg_link_t *link;
     glist_t gl;
@@ -116,6 +116,12 @@ fsg_model_trans_add(fsg_model_t * fsg,
     link->to_state = to;
     link->logs2prob = logp;
     link->wid = wid;
+
+    gnode_t *gnt = tags;
+    if(gnt)
+    {
+        strncpy(link->tag,(char *)gnode_ptr(gnt),50);
+    }
 
     /* Add it to the list of transitions and update the hash table */
     gl = glist_add_ptr(gl, (void *) link);
@@ -413,12 +419,12 @@ fsg_model_add_silence(fsg_model_t * fsg, char const *silword,
     n_trans = 0;
     if (state == -1) {
         for (src = 0; src < fsg->n_state; src++) {
-            fsg_model_trans_add(fsg, src, src, logsilp, silwid);
+            fsg_model_trans_add(fsg, src, src, logsilp, silwid, NULL);
             ++n_trans;
         }
     }
     else {
-        fsg_model_trans_add(fsg, state, state, logsilp, silwid);
+        fsg_model_trans_add(fsg, state, state, logsilp, silwid, NULL);
         ++n_trans;
     }
 
@@ -666,7 +672,7 @@ fsg_model_read(FILE * fp, logmath_t * lmath, float32 lw)
                 wid = lastwid;
                 ++lastwid;
             }
-            fsg_model_trans_add(fsg, i, j, tprob, wid);
+            fsg_model_trans_add(fsg, i, j, tprob, wid, NULL);
             ++n_trans;
         }
         else {
@@ -805,12 +811,18 @@ fsg_model_write(fsg_model_t * fsg, FILE * fp)
         for (itor = fsg_model_arcs(fsg, i); itor;
              itor = fsg_arciter_next(itor)) {
             fsg_link_t *tl = fsg_arciter_get(itor);
-
-            fprintf(fp, "%s %d %d %f %s\n", FSG_MODEL_TRANSITION_DECL,
+            char tag_info[MAX_TAG_SIZE+2] = "";
+            if (tl->tag[0])
+            {
+                strcpy(tag_info, " #");
+                strcat(tag_info, tl->tag);
+            }
+            fprintf(fp, "%s %d %d %f %s%s\n", FSG_MODEL_TRANSITION_DECL,
                     tl->from_state, tl->to_state,
                     logmath_exp(fsg->lmath,
                                 (int32) (tl->logs2prob / fsg->lw)),
-                    (tl->wid < 0) ? "" : fsg_model_word_str(fsg, tl->wid));
+                    (tl->wid < 0) ? "" : fsg_model_word_str(fsg, tl->wid),
+                    tag_info);
         }
     }
 

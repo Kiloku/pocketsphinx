@@ -67,6 +67,9 @@ extern "C" {
 }
 #endif
 
+#define MAX_TAG_SIZE 50
+
+
 /**
  * @struct fsg_link_t
  * @brief A single transition in the FSG.
@@ -76,12 +79,14 @@ typedef struct fsg_link_s {
     int32 to_state;
     int32 logs2prob;	/**< log(transition probability)*lw */
     int32 wid;		/**< Word-ID; <0 if epsilon or null transition */
+    char tag[MAX_TAG_SIZE]; /**< List containig tags (char *) associated with the link */
 } fsg_link_t;
 
 /* Access macros */
 #define fsg_link_from_state(l)	((l)->from_state)
 #define fsg_link_to_state(l)	((l)->to_state)
 #define fsg_link_wid(l)		((l)->wid)
+#define fsg_link_tag(l) ((l)->tag)
 #define fsg_link_logs2prob(l)	((l)->logs2prob)
 
 /**
@@ -184,7 +189,7 @@ int fsg_model_word_id(fsg_model_t *fsg, char const *word);
  * same word label) are flagged and only the highest prob retained.
  */
 void fsg_model_trans_add(fsg_model_t * fsg,
-                         int32 from, int32 to, int32 logp, int32 wid);
+                         int32 from, int32 to, int32 logp, int32 wid, glist_t tags); 
 
 /**
  * Add a null transition between the given states.
