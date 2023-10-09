@@ -52,6 +52,8 @@ main(int argc, char *argv[])
     (void)argc; (void)argv;
 
     config = ps_config_init(NULL);
+    ps_config_set_str(config, "jsgf", "commands.jsgf");
+    ps_config_set_bool(config, "bestpath", FALSE);
     ps_default_search_args(config);
     if ((decoder = ps_init(config)) == NULL)
         E_FATAL("PocketSphinx decoder init failed\n");
@@ -95,8 +97,15 @@ main(int argc, char *argv[])
                 fprintf(stderr, "Speech end at %.2f\n",
                         ps_endpointer_speech_end(ep));
                 ps_end_utt(decoder);
-                if ((hyp = ps_get_hyp(decoder, NULL)) != NULL)
-                    printf("%s\n", hyp);
+
+                glist_t tags = NULL;
+                
+                if ((hyp = ps_get_hyp_with_tags(decoder, NULL, &tags)) != NULL) {
+                    char tag[50];
+                    char word[50];
+                    ps_get_word_and_tag(tags, word, tag);
+                    printf("%s # %s\n", hyp, tag);
+                }
             }
         }
     }
